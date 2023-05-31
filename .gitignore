@@ -99,3 +99,4 @@ Guardfile
 README.html
 *.iml
 .idea
+**/.gitignore
