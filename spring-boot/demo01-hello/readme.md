@@ -74,3 +74,35 @@ SpringBoot 帮我们简单、快速地创建一个独立的、生产级别的 Sp
 - 修改配置（外部放一个application.properties文件）、监控、健康检查。
    .....
 
+
+
+
+## 应用分析
+### 依赖管理机制
+
+1. 为什么导入`场景启动器`所有的依赖就都导入进来了?
+- 根据`maven`的依赖传递原则, A依赖B,B依赖C;则A同时依赖B C
+- 以`web场景启动器`为例,引入`spring-boot-starter-web`
+- `spring-boot-starter-web` 会有很多依赖,包括其他`场景启动器`
+  如`spring-boot-starter-tomcat`,`spring-web`,`spring-webmvc`等
+- **小结一下**: 该`场景启动器`会将所有的依赖提前准备好,根据`maven`的依赖传递原则就可全部引入
+
+2. 为什么版本号不用写?
+- 每个boot项目都有一个父项目`spring-boot-starter-parent`
+- parent的父项目是`spring-boot-dependencies`
+- 也称`版本仲裁中心`,已将所有常见的依赖版本号提前声明好
+- 使用
+
+3. 自定义版本号
+- 根据`maven`的就近原则
+- 直接在当前项目`properties`标签中定义了版本号,使用`dependencyManagement`标签声明父项目用的所有依赖
+- 或者直接在导入依赖的时候声明版本
+
+4. 第三方的jar包
+- boot 父项目没有管理的需要自行声明好
+
+![SpringBoot依赖管理](https://cdn.jsdelivr.net/gh/fu-jw/picture/hexoPic/springboot%E4%BE%9D%E8%B5%96%E7%AE%A1%E7%90%86.png)
+
+### 自动装配机制
+
+
