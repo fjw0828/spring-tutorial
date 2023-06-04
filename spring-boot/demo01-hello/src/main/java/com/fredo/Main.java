@@ -15,6 +15,12 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(Main.class, args);
+        // jdk10 的新特性:var 可用于局部变量类型自动推断
+        var ioc = SpringApplication.run(Main.class, args);
+        String[] names = ioc.getBeanDefinitionNames();
+
+        for (String name : names) {
+            System.out.println("容器中的Bean:" + name);
+        }
     }
 }
