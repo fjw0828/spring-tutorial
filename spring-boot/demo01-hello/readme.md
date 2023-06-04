@@ -145,9 +145,9 @@ SpringBoot 帮我们简单、快速地创建一个独立的、生产级别的 Sp
    - SpringBoot 默认只扫描主程序所在的包及其下子包, 扫描不到`spring-boot-autoconfigure`包中的**配置类**
    - `@EnableAutoConfiguration`: SpringBoot 开启自动配置的核心
       - 是由`@Import(AutoConfigurationImportSelector.class)`提供功能：批量给容器中导入组件
-      - SpringBoot 默认加载142个配置类
-      - 这142个配置类来自于`spring-boot-autoconfigure`下 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports 文件指定
-      - 项目启动的时候利用 @Import 批量导入组件机制, 把 autoconfigure 包下的**自动配置类**: xxxAutoConfiguration 导入进来(SpringBoot3.1.0有146个)
+      - SpringBoot 默认加载所有的配置类(SpringBoot3.1.0有146个)
+      - 这146个配置类来自于`spring-boot-autoconfigure`下 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports 文件指定
+      - 项目启动的时候利用 @Import 批量导入组件机制, 把 autoconfigure 包下的**自动配置类**: xxxAutoConfiguration 导入进来
    - 按需生效
       - 这146个自动配置类并不全都生效
       - 每个自动配置类都有条件注解`@ConditionalOnXxx`, 只有条件成立, 才能生效
