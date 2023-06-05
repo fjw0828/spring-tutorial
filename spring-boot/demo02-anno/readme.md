@@ -30,7 +30,7 @@ for (String name : names) {
     System.out.println("容器中的Bean:" + name);
 }
 ```
-3.result
+3.output
 ```text
 容器中的Bean:person
 容器中的Bean:cat
@@ -54,7 +54,7 @@ public class AppConfig {
     public Cat cat(){
         var cat = new Cat();
         cat.setId(1);
-        cat.setName("fred0");
+        cat.setName("Tom");
         return cat;
     }
 }
@@ -64,19 +64,170 @@ public class AppConfig {
 ### 1.组件注册
 
 #### @Configuration和@Bean
-`@Configuration` 标注在**类**上, 声明这个类是一个配置类, 加入ioc容器中, 相当于以前的xml配置文件
-`@Bean` 标注在**方法**上, 该方法的输出结果就是一个 JavaBean 
+- `@Configuration` 标注在**类**上, 声明这个类是一个配置类, 加入ioc容器中, 相当于以前的xml配置文件
+- `@Bean` 标注在**方法**上, 该方法的输出结果就是一个 JavaBean 
 
 `@Configuration`和`@Bean`配合使用就可完全替代XML的配置文件
+
+`@SpringBootConfiguration`是 SpringBoot 中的特有注解, `@Configuration`是通用版注解, 功能一样
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Configuration
+@Indexed
+public @interface SpringBootConfiguration {
+	@AliasFor(annotation = Configuration.class)
+	boolean proxyBeanMethods() default true;
+}
+```
 
 注意:
 - bean的名称, 默认是方法名
 - 可以修改, `@Bean("newName")`
 
+### @Component和@ComponentScan
+在实际项目中, 我们更多的是使用 Spring 的包扫描功能对项目中的包进行扫描, 
+凡是在指定的包或其子包中的类上标注了`@Repository`, `@Service`, `@Controller`, `@Component`注解的类都会被扫描到, 并将这个类注入到 Spring 容器中
+
+Spring 包扫描功能可以使用XML配置文件进行配置, 也可以直接使用`@ComponentScan`注解进行设置, 使用`@ComponentScan`注解进行设置比使用XML配置文件来配置要简单的多
+
+XML方式
+```xml
+<!-- 包扫描：只要是标注了我们熟悉的@Controller、@Service、@Repository、@Component这四个注解中的任何一个的组件，它就会被自动扫描，并加进容器中 -->
+<context:component-scan base-package="com.fredo"></context:component-scan>
+```
+
+`@ComponentScan`方式
+```java
+@ComponentScan(value="com.fredo") // value指定要扫描的包
+@Configuration // 这是一个配置类, 替代以前的xml配置文件
+public class AppConfig {
+    // ...
+}
+```
+注意:
+0. 主程序标注了`@SpringBootApplication`, 就会默认扫描主程序所在的包及其子包; 
+1. 如果设置了`@ComponentScan("...")`, 则以设置的扫描路径为主, 默认值不再生效
+2. `@ComponentScan`还可以设置包含某些组件(`includeFilters()`)或者排除某些组件(`excludeFilters()`)
+```java
+@ComponentScan(value="com.fredo", excludeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     * classes：除了@Controller和@Service标注的组件之外，IOC容器中剩下的组件我都要，即相当于是我要排除@Controller和@Service这俩注解标注的组件。
+     */
+    @Filter(type=FilterType.ANNOTATION, classes={Controller.class, Service.class})
+}) // value指定要扫描的包
+```
+3. `@ComponentScan`是可重复注解
+```java
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     * classes：我们需要Spring在扫描时，只包含@Controller注解标注的类
+     */
+    @Filter(type=FilterType.ANNOTATION, classes={Controller.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     * classes：我们需要Spring在扫描时，只包含@Service注解标注的类
+     */
+    @Filter(type=FilterType.ANNOTATION, classes={Service.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+```
+
+小结一下:
+- `@Component` 声明 Bean, 告诉 Spring 这是一个 Bean
+- `@ComponentScan` 设置扫描路径, 告诉 Spring 到哪里找到这些 Bean 
+
+### @ComponentScan.Filter
+Spring 的强大之处不仅仅是提供了 IOC 容器, 
+可以设置包含某些组件(`includeFilters()`)或者排除某些组件(`excludeFilters()`), 它还能够通过自定义`TypeFilter`来指定过滤规则. 
+
+`FilterType`中常用的规则如下: 
+1. ANNOTATION：按照注解进行包含或者排除
+```java
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     * classes：我们需要Spring在扫描时，只包含@Controller注解标注的类
+     */
+    @Filter(type=FilterType.ANNOTATION, classes={Controller.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+```
+2. ASSIGNABLE_TYPE：按照给定的类型进行包含或者排除
+```java
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     */
+    // 只要是BookService这种类型的组件都会被加载到容器中，不管是它的子类还是什么它的实现类。记住，只要是BookService这种类型的
+    @Filter(type=FilterType.ASSIGNABLE_TYPE, classes={BookService.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+```
+3. ASPECTJ：使用表达式来挑选复杂的类子集
+```java
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     */
+    @Filter(type=FilterType.ASPECTJ, classes={AspectJTypeFilter.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+```
+4. REGEX：按照正则表达式进行包含或者排除
+```java
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     */
+    @Filter(type=FilterType.REGEX, classes={RegexPatternTypeFilter.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+```
+5. CUSTOM：按照自定义规则进行包含或者排除
+```java
+@ComponentScan(value="com.fredo", includeFilters={
+    /*
+     * type：指定你要排除的规则，是按照注解进行排除，还是按照给定的类型进行排除，还是按照正则表达式进行排除，等等
+     */
+    // 指定新的过滤规则，这个过滤规则是我们自个自定义的，过滤规则就是由我们这个自定义的MyTypeFilter类返回true或者false来代表匹配还是没匹配
+    @Filter(type=FilterType.CUSTOM, classes={MyTypeFilter.class})
+}, useDefaultFilters=false) // value指定要扫描的包
+```
+MyTypeFilter.java
+```java
+public class MyTypeFilter implements TypeFilter {
+	/**
+	 * 参数：
+	 * metadataReader：读取到的当前正在扫描的类的信息
+	 * metadataReaderFactory：可以获取到其他任何类的信息的（工厂）
+     * 
+     * 返回值:
+     * 当返回true时，表示符合规则，会包含在Spring容器中；
+     * 当返回false时，表示不符合规则，就不会被包含在Spring容器中
+	 */
+	@Override
+	public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory) throws IOException {
+		// 自定义过滤规则
+        return false; 
+	}
+}
+```
+属性值:
+- type: 要排除的方式:`FilterType`
+- value: 要排除的类型, 同 `classes`
+- classes: 同 `value`
+- pattern: 正则表达式
+
+### @Scope
+用于设置组件的**作用域**, 默认值是`singleton`单例
+
+作用域取值:
+- singleton: 单例, 默认值
+- prototype: 多例
+- request: web 环境中, 一个请求只创建一个对象
+- session: web 环境中, 一个 session 只创建一个对象
+- application: web 环境中, 一个应用程序只创建一个对象, 全局
 
 
-
-
-
-
-
+###
