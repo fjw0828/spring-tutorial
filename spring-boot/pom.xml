@@ -18,6 +18,7 @@
 
     <modules>
         <module>demo01-hello</module>
+        <module>demo02-anno</module>
     </modules>
 
     <dependencyManagement>
