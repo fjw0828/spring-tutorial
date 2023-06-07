@@ -19,7 +19,7 @@ public class AppConfig {
         return person;
     }
     @Bean
-//    @Scope("prototype")
+    @Scope("prototype")
     public Cat cat(){
         var cat = new Cat();
         cat.setId(1);
