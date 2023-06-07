@@ -61,16 +61,14 @@ public class AppConfig {
 ```
 ## 2.常见注解
 
-### 1.组件注册
-
-#### @Component及其衍生组件(@Repository, @Controller, @Service, @Configuration)
+### @Component及其衍生组件(@Repository, @Controller, @Service, @Configuration)
 - @Component 是通用组件
 - @Repository 用于持久层
 - @Controller 用于表现层
 - @Service 用于业务逻辑层
 - @Configuration 用于配置文件 
 
-#### @Configuration和@Bean
+### @Configuration和@Bean
 - `@Configuration` 标注在**类**上, 声明这个类是一个配置类, 加入ioc容器中, 相当于以前的xml配置文件
 - `@Bean` 标注在**方法**上, 该方法的输出结果就是一个 JavaBean 
 
@@ -247,4 +245,19 @@ public class MyTypeFilter implements TypeFilter {
 
 注意: 懒加载, 仅针对单例bean生效
 
-### 
+### 条件注解
+@ConditionalOnXxx 注解指定的**条件成立**, 则触发指定行为
+- @ConditionalOnClass：如果类路径中存在这个类，则触发指定行为
+- @ConditionalOnMissingClass：如果类路径中不存在这个类，则触发指定行为
+- @ConditionalOnBean：如果容器中存在这个Bean（组件），则触发指定行为
+- @ConditionalOnMissingBean：如果容器中不存在这个Bean（组件），则触发指定行为
+- ...
+
+### 属性绑定
+将容器中任意组件(Bean)的**属性值和配置文件**的配置项的值进行绑定
+1. 给容器中注册组件(`@Component`, `@Bean`)
+2. 使用`@ConfigurationProperties`声明组件和配置文件的哪些配置项进行绑定
+
+`@EnableConfigurationProperties` 快速注册注解
+- SpringBoot 默认只扫描自己主程序所在的包. 如果导入第三方包, 即使组件上标注了`@Component`, `@ConfigurationProperties`注解, 也没用.
+- 因为组件都扫描不进来, 此时使用这个注解就可以快速进行属性绑定并把组件注册进容器
