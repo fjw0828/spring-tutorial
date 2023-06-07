@@ -93,7 +93,7 @@ public @interface SpringBootConfiguration {
 
 <details> <summary>已经有`@Component`及其衍生组件,为什么还要`@Bean`注解?</summary>
 
-- 类似`@Component`,`@Repository`,`@Controller`,`@Service`这些注册Bean的注解存在局限性:只能作用于自己编写的类, 如果是一个jar包第三方库要加入IOC容器的话, 这些注解就手无缚鸡之力了, 但是`@Bean`就可以做到这一点！
+- 类似`@Component`,`@Repository`,`@Controller`,`@Service`这些注册Bean的注解存在局限性:只能作用于自己编写的类, 不能导入第三方jar包, 但是`@Bean`就可以做到这一点！
 - 能够动态获取一个Bean对象，能够根据环境不同得到不同的Bean对象
 </details>
 
