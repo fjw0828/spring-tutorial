@@ -245,5 +245,6 @@ public class MyTypeFilter implements TypeFilter {
 ### @Lazy
 懒加载就是Spring容器启动的时候, 先不创建对象, 在第一次使用(获取)bean的时候再来创建对象, 并进行一些初始化
 
+注意: 懒加载, 仅针对单例bean生效
 
 ### 
