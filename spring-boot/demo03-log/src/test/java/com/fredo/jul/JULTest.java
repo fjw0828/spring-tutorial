@@ -102,4 +102,46 @@ public class JULTest {
         logger.finer("finer");
         logger.finest("finest");
     }
+
+    /**
+     * Logger对象父子关系
+     */
+    @Test
+    public void test05(){
+
+        Logger parentLogger = Logger.getLogger("com");
+        Logger childLogger = Logger.getLogger("com.fredo");
+
+        // 测试父子关系
+        System.out.println(childLogger.getParent() == parentLogger);// true
+        // 打印结果:parentLogger parent:java.util.logging.LogManager$RootLogger
+        System.out.println("parentLogger parent:"+parentLogger.getParent()
+                +"name:"+ parentLogger.getParent().getName());
+
+        System.out.println("===================");
+
+        // 自定义
+        childLogger.setUseParentHandlers(false);// 关闭默认配置
+        // 创建ConsoleHandler
+        Handler consoleHandler = new ConsoleHandler();
+        // 创建简单格式转换对象
+        SimpleFormatter formatter = new SimpleFormatter();
+        // 关联
+        consoleHandler.setFormatter(formatter);
+        childLogger.addHandler(consoleHandler);
+        // 设置日志级别
+        childLogger.setLevel(Level.ALL);
+        consoleHandler.setLevel(Level.ALL);
+
+        // 日志输出
+        childLogger.severe("severe, 输出错误信息");
+        childLogger.warning("warning, 警告信息");
+        childLogger.info("info");
+        childLogger.config("config");
+        childLogger.fine("fine");
+        childLogger.finer("finer");
+        childLogger.finest("finest");
+    }
+
+
 }

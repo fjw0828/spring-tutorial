@@ -64,29 +64,37 @@ Apache基金会最早实现的一套日志框架, 通过使用`Log4j`
 - 通过定义每一条**日志信息的级别**, 我们能够更加细致地控制日志的生成过程
 - 可以通过一个**配置文件**来灵活地进行配置, 而不需要修改应用的代码 ☆☆
 
+`Log4j`主要由`Loggers`(日志记录器), `Appenders`(输出端), `Layout`(格式化).
+- `Loggers`控制日志输出级别与日志是否输出
+- `Appenders`指定日志的输出方式(输出到控制台或文件等)
+- `Layout`控制日志的输出格式
+
 ### JUL
 Java Util Logging
 
 JDK1.4发布的Java原生的日志框架, 使用时不需要另外引用第三方的类库, 相对其他的框架使用方便
 
-![JUL框架](https://s2.loli.net/2023/06/13/rMfYkHGQzlJKdpB.webp)
+1. 初始化`LogManager`
+    1. `LogManager`加载logging.properties配置
+    2. 添加`Logger`到`LogManager`
+2. 从`LogManager`中获取`Logger`
+3. 设置级别`Level`, 并指定日志记录`LogRecord`
+4. `Filter`提供日志级别之外更细粒度的控制
+5. `Handler`是用来处理日志输出位置
+6. `Formatter`用来格式化LogRecord
 
-- Logger: 日志记录器,程序通过获取logger对象,调用其API进行日志操作
-- Handler: Appender 日志处理器,具体实现决定日志的记录位置可以是控制台,文件等
-- Formatter: Layouts 对日志格式化,决定了日志的最终形式
-- Level: 每条日志都有关联的日志级别
-- Filter: 过滤器,可以自定义过滤日志
+![JUL流程](https://s2.loli.net/2023/06/13/bCoUrAMwVqHFGz7.webp)
 
+### JCL
+Jakarta Commons Logging
 
+是Apache基金下Jakarta小组开发的通用日志API
 
+主要功能是给**所有的日志实现**提供一个**统一接口**, 本身也提供日志实现(SimpleLog),但是很弱一般不用.
+常见的日志实现如:最早的**Log4j**以及JDK自带的**JUL**等
 
-
-
-
-
-
-
-
+**面向接口编程**  解耦合
+![JCL](https://s2.loli.net/2023/06/13/EZ62fIKGMwTsRDn.webp)
 
 
 
