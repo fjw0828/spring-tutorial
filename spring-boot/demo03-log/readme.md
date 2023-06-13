@@ -42,7 +42,7 @@ private void write(String s) {
 }
 ```
 由上面的源码可以看出`print`的方法实现是由`synchronized`包裹的同步代码块
-在**高并发**的情况下, 会严重**影响性能**
+不能异步打印日志, 在**高并发**的情况下, 会严重**影响性能**
 
 **阿里巴巴Java开发手册:**
 >【强制】 应用中不可直接使用日志系统（ Log4j、 Logback） 中的 API，而应依赖使用日志框架
@@ -69,8 +69,13 @@ Java Util Logging
 
 JDK1.4发布的Java原生的日志框架, 使用时不需要另外引用第三方的类库, 相对其他的框架使用方便
 
+![JUL框架](https://s2.loli.net/2023/06/13/rMfYkHGQzlJKdpB.webp)
 
-
+- Logger: 日志记录器,程序通过获取logger对象,调用其API进行日志操作
+- Handler: Appender 日志处理器,具体实现决定日志的记录位置可以是控制台,文件等
+- Formatter: Layouts 对日志格式化,决定了日志的最终形式
+- Level: 每条日志都有关联的日志级别
+- Filter: 过滤器,可以自定义过滤日志
 
 
 
