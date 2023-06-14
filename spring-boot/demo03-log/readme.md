@@ -110,7 +110,7 @@ Apache基金下Jakarta小组开发的通用日志API
 
 >由于设计缺陷,只支持当时主流的几个日志实现,不利于其他日志的使用(需修改源码),现已淘汰!!!
 
-### SLF4J和logback
+### SLF4J
 >`Log4j`的作者觉得`JCL`不好用,自己又写了一个新的接口api,就是`SLF4J`,
 并且为了追求更极致的性能,新增了一套日志的实现,就是`logback`
 
@@ -200,9 +200,80 @@ SLF4J + slf4j-nop 组合结果:
   - 对于没有实现`sl4j`API的日志实现,需要先添加对应的日志**适配器**,再添加对应的依赖
 - `sl4j`有且仅有一个日志实现的绑定,出现多个时默认使用第一个
 
+#### SLF4J桥接器
+>以上都是SLF4J和不同的日志组合实现,
+可以发现不同的日志框架打印的日志格式不一!!!</br>
+这是因为SLF4J为了适配不同的日志框架提供了不同的**适配器**,具体的日志记录还是交给对应的日志框架实现的</br></br>
+>SLF4J还提供了**桥接器**!!!</br>
+桥接器则是由SLF4J实现一套对应的日志框架的API,日志的记录打印完全由这套API实现,可以做到格式统一,且旧代码无需任何更改.
+
+**桥接器**解决的是项目中日志的遗留问题,当系统中存在之前的日志API可以通过桥接转换到SLF4J的实现
+1. 移除旧日志框架的依赖--此时旧代码会报错(没有依赖了)
+2. 添加SLF4J提供的对应的桥接组件--SLF4J自己提供一套API,旧代码不再报错
+3. 为项目添加SLF4J的具体实现--就是新的日志实现(SLF4J作为日志门面,还需要具体的日志实现)
+
+![SLF4J桥接](https://s2.loli.net/2023/06/14/YI3nCNavq5oZFbU.webp)
+
+#### 代码演示
+pom.xml部分内容:
+```xml
+<!--
+假设以前使用了log4j的日志框架,但后续想要改用其他日志框架,如logback
+原来的代码由于使用的log4j,依赖也是log4j的API,现在没有了log4j的依赖则会报错
+当有了桥接器则只需要引入对应的桥接器即可,旧代码无任何改动
+-->
+<!--        <dependency>-->
+<!--            <groupId>log4j</groupId>-->
+<!--            <artifactId>log4j</artifactId>-->
+<!--            <version>1.2.17</version>-->
+<!--        </dependency>-->
+
+<!--log4j和slf4j的桥接器-->
+<!--将log4j桥接到slf4j,slf4j再去使用logback记录日志-->
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>log4j-over-slf4j</artifactId>
+    <version>1.7.25</version>
+</dependency>
+```
+测试代码:
+```java
+/**
+ * 桥接器演示
+ *  假设以前使用的日志是:Log4j
+ *  现在要换成Logback(SpringBoot 默认自带,无需引入依赖)
+ */
+public class Log4jTest {
+    @Test
+    public void test(){
+        Logger logger = Logger.getLogger(Log4jTest.class);
+
+        logger.info("Hello Log4j");
+    }
+    /**
+     * 使用log4j时,打印信息:
+     *  2023-06-11 21:52:29.039 Hello Log4j
+     *
+     * 使用log4j和slf4j的桥接器时,打印信息:
+     *  22:10:38.352 [main] INFO com.fredo.slf4j.Log4jTest -- Hello Log4j
+     */
+}
+```
+注意:适配器和桥接器不要同时出现!!!否则可能出现`StackOverflowError`异常(我没演示出来~~~)
+
+### Logback
+是`Log4j`的创始人设计的另一个开源日志组件,性能比`Log4j`好.
+
+logback分为三个模块:
+- logback-core:其他两个模块的核心
+- logback-classic:兼容`log4j 1.x`和`JUL`,并进行了改进
+- logback-access:与Servlet容器(如Tomcat和Jetty)集成,以提供`HTTP`访问日志功能
 
 
 
+
+
+### Log4j2
 
 
 
