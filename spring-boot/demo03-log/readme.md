@@ -269,13 +269,24 @@ logback分为三个模块:
 - logback-classic:兼容`log4j 1.x`和`JUL`,并进行了改进
 - logback-access:与Servlet容器(如Tomcat和Jetty)集成,以提供`HTTP`访问日志功能
 
-
-
-
-
 ### Log4j2
+Apache `Log4j2`是对`Log4j`的重大升级,并参考了`logback`的一些优秀设计,主要特点:
+- 异常处理机制: 在`logback`中,`Appender`中的异常不会被感知到,但在`log4j2`中提供了异常处理机制
+- 性能提升: 相较`log4j`和`logback`都有明显性能提升
+- 自动重载配置: 参考`logback`的设计,自动刷新参数配置,生产环境可动态修改日志配置
+- 无垃圾机制: 避免频繁的日志收集导致JVM的GC.
 
+注意:`Log4j2`既是日志门面又是日志实现,但`SLF4J`日志门面更早出现更流行,所以市面上主流的搭配还是`SLF4J`+`Logback`/`Log4J2`
+- log4j-api: 是日志门面
+- log4j-core: 是日志实现
 
+## SpringBoot中的日志
+
+![](https://s2.loli.net/2023/06/15/Rtsyneul2bhIKNr.webp)
+
+- 默认使用`logback`作为日志实现
+- 使用`slf4j`作为日志门面
+- 可以将`log4j2`和`jul`桥接到`slf4j`
 
 
 
