@@ -132,7 +132,7 @@ public class ServerProperties {
 ## 小试牛刀
 接下来检验下SpringBoot自动配置原理的理解, 尝试回答如下问题:
 
-<details> <summary>项目启动后为什么默认端口号是8080, 以及如何修改???</summary>
+<details> <summary><strong><span style="color: red; ">为什么项目启动后默认端口号是8080, 以及如何修改???</span></strong></summary>
 
 1. 引入`web场景`
 ```xml
@@ -208,8 +208,8 @@ public class ServerProperties {
 ```
 只需要在自己的配置文件中自定义`server.port`的值
 
-SpringBoot启动时就会去resources路径下加载符合要求的文件, 从该文件中查找配置来覆盖默认配置, 
-即完成了配置自定义
+SpringBoot启动时就会去resources路径下加载符合要求的文件, 从该文件中查找配置并覆盖默认配置, 
+于是就完成了配置自定义
 
 `spring-boot-starter-parent-3.1.0.pom`文件:
 ```xml

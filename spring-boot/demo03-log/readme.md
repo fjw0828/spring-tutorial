@@ -1,4 +1,4 @@
-# SpringBoot日志
+# 日志体系
 
 日志记录了系统行为的时间, 地点, 状态等相关信息, 能够帮助我们了解并监控系统状态, 
 在发生错误或者接近某种危险状态时能及时提醒我们处理, 同时在系统产生问题, 能够帮助我们快速定位, 诊断问题.
@@ -53,9 +53,8 @@ e.printStackTrace()打印异常堆栈</br></br>
 > 【强制】 在日志输出时，字符串变量之间的拼接使用占位符的方式</br></br>
 > 【强制】 对于 trace/debug/info 级别的日志输出，必须进行日志级别的开关判断
 
-## 1.日志体系
 
-### Log4j
+## Log4j
 Log for Java
 
 Ceki Gülcü于2001年发布了Log4j, 并将其捐献给Apache软件基金会, 成为Apache基金会的顶级项目.
@@ -72,7 +71,7 @@ Apache基金会最早实现的一套日志框架, 通过使用`Log4j`
 
 >2015年9月, Apache软件基金业宣布, Log4j不再维护, 建议所有相关项目升级到Log4j2.
 
-### JUL
+## JUL
 Java Util Logging
 
 SUN公司在JDK1.4发布的Java原生的日志框架, 使用时不需要另外引用第三方的类库, 相对其他的框架使用方便
@@ -88,7 +87,7 @@ SUN公司在JDK1.4发布的Java原生的日志框架, 使用时不需要另外�
 
 ![JUL流程](https://s2.loli.net/2023/06/13/bCoUrAMwVqHFGz7.webp)
 
-### JCL
+## JCL
 Jakarta Commons Logging
 
 >JUL的api与log4j是完全不同的(参数只接受string).由于日志系统没有互相关联,彼此没有约定,不同人的代码使用不同日志,替换和统一也就变成了一件非常棘手的事情.
@@ -110,7 +109,7 @@ Apache基金下Jakarta小组开发的通用日志API
 
 >由于设计缺陷,只支持当时主流的几个日志实现,不利于其他日志的使用(需修改源码),现已淘汰!!!
 
-### SLF4J
+## SLF4J
 >`Log4j`的作者觉得`JCL`不好用,自己又写了一个新的接口api,就是`SLF4J`,
 并且为了追求更极致的性能,新增了一套日志的实现,就是`logback`
 
@@ -122,7 +121,7 @@ Simple Logging Facade For Java
 - 日志框架的绑定
 - 日志框架的桥接
 
-#### SLF4J的各种组合
+### SLF4J的各种组合
 ![SLF4J](https://s2.loli.net/2023/06/14/q1GbgIwUevMZ8WA.webp)
 需对应的适配器
 
@@ -200,7 +199,7 @@ SLF4J + slf4j-nop 组合结果:
   - 对于没有实现`sl4j`API的日志实现,需要先添加对应的日志**适配器**,再添加对应的依赖
 - `sl4j`有且仅有一个日志实现的绑定,出现多个时默认使用第一个
 
-#### SLF4J桥接器
+### SLF4J桥接器
 >以上都是SLF4J和不同的日志组合实现,
 可以发现不同的日志框架打印的日志格式不一!!!</br>
 这是因为SLF4J为了适配不同的日志框架提供了不同的**适配器**,具体的日志记录还是交给对应的日志框架实现的</br></br>
@@ -214,7 +213,7 @@ SLF4J + slf4j-nop 组合结果:
 
 ![SLF4J桥接](https://s2.loli.net/2023/06/14/YI3nCNavq5oZFbU.webp)
 
-#### 代码演示
+### 代码演示
 pom.xml部分内容:
 ```xml
 <!--
@@ -261,7 +260,7 @@ public class Log4jTest {
 ```
 注意:适配器和桥接器不要同时出现!!!否则可能出现`StackOverflowError`异常(我没演示出来~~~)
 
-### Logback
+## Logback
 是`Log4j`的创始人设计的另一个开源日志组件,性能比`Log4j`好.
 
 logback分为三个模块:
@@ -269,7 +268,7 @@ logback分为三个模块:
 - logback-classic:兼容`log4j 1.x`和`JUL`,并进行了改进
 - logback-access:与Servlet容器(如Tomcat和Jetty)集成,以提供`HTTP`访问日志功能
 
-### Log4j2
+## Log4j2
 Apache `Log4j2`是对`Log4j`的重大升级,并参考了`logback`的一些优秀设计,主要特点:
 - 异常处理机制: 在`logback`中,`Appender`中的异常不会被感知到,但在`log4j2`中提供了异常处理机制
 - 性能提升: 相较`log4j`和`logback`都有明显性能提升
@@ -280,19 +279,15 @@ Apache `Log4j2`是对`Log4j`的重大升级,并参考了`logback`的一些优秀
 - log4j-api: 是日志门面
 - log4j-core: 是日志实现
 
-## SpringBoot中的日志
+## 总结
+市面上的日志框架可分成两类:日志门面和日志实现
 
-![](https://s2.loli.net/2023/06/15/Rtsyneul2bhIKNr.webp)
+![日志分类](https://s2.loli.net/2023/06/16/6ApzJit1ovaQ9w5.webp)
 
-- 默认使用`logback`作为日志实现
-- 使用`slf4j`作为日志门面
-- 可以将`log4j2`和`jul`桥接到`slf4j`
+项目中会选一个日志门面和一个日志实现组合
+- 日志门面一般选`SLF4J`,相比`JCL`更简单好用
+- 日志实现一般选`Logback`.`SLF4J`和`Logback`/`Log4j`是同一个作者更易搭配,且`Logback`是`Log4j`的升级版
 
+市面上常见搭配是:`SLF4J`+`Logback`(也是SpringBoot的默认)
 
-
-
-
-
-
-
-
+而Apache基金新推出的`Log4j2`比`Logback`性能更好,`SLF4J`+`Log4j2`也是大势所趋.
