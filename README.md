@@ -2,6 +2,7 @@
 Spring 练手项目汇总
 
 模块结构:
+```text
 spring-tutorial
 └─spring-boot:SpringBoot项目汇总
     ├─demo01-hello:SpringBoot快速入门+依赖管理+自动装配
@@ -11,3 +12,4 @@ spring-tutorial
     ├─demo03-log:Java日志体系+SpringBoot日志
     │
     └─demo04-web:
+```
