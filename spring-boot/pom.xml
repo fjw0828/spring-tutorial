@@ -20,6 +20,7 @@
         <module>demo01-hello</module>
         <module>demo02-anno</module>
         <module>demo03-log</module>
+        <module>demo04-web</module>
     </modules>
 
     <dependencyManagement>
