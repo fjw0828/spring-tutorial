@@ -1,4 +1,5 @@
 # SpringBoot自动配置原理浅析
+>我的[SpringBoot项目](https://github.com/fu-jw/spring-tutorial)第二个模块
 
 在日常开发中, 通常我们只需要引入某个`场景启动器`, 再加上一些相应的配置即可, 无需费心复杂的整合操作, 这也是 SpringBoot 的强大之处.
 
