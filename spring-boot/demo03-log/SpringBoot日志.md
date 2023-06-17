@@ -84,7 +84,6 @@ logging.config=classpath:logback-bak.xml
 或者添加`lombok`依赖, 在类上直接使用`@Slf4j`注解即可代替上面代码
 
 ```xml
-
 <dependency>
     <groupId>org.projectlombok</groupId>
     <artifactId>lombok</artifactId>
