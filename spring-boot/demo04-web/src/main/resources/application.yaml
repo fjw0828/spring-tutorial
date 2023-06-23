@@ -1,0 +1,18 @@
+#1、spring.web：
+# 1.配置国际化的区域信息(locale)
+# 2.静态资源策略(开启、处理链、缓存)
+# 同样可用代码配置,如:config/MyConfig.java
+#spring:
+#  web:
+#    resources:
+#      add-mappings: true # 开启静态资源映射规则,默认true
+#      cache:
+#        period: 3600 # 单位是 秒, 此为简要设置, 下面(cache-control)是详细配置,会覆盖period
+#        cache-control:
+#          max-age: 7200 # 浏览器第一次请求服务器，服务器告诉浏览器此资源缓存7200秒，7200秒以内的所有此资源访问不用发给服务器请求，7200秒以后发请求给服务器
+#        use-last-modified: true # 默认true, 使用资源 last-modified 时间，来对比服务器和浏览器的资源是否相同没有变化。相同返回 304
+#      static-locations: classpath:/static/,classpath:/test/ # 自定义静态资源目录,按顺序访问
+#  mvc:
+#    webjars-path-pattern: /webjars/** # 自定义webjars路径前缀,默认:/webjars/**
+#    static-path-pattern: /static/** # 静态资源访问路径前缀,默认:/**
+

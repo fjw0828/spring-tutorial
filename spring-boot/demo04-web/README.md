@@ -101,9 +101,9 @@ SpringBoot 的自动装配功能在`web场景`中添加了如下特性:
 
 由前面知道引入`web场景`会加载自动配置类:`WebMvcAutoConfiguration`
 
-### 1.WebMvcAutoConfiguration原理浅析
+下面简要分析`WebMvcAutoConfiguration`原理
 
-#### 1.生效条件
+### 1.生效条件
 
 ```java
 
@@ -122,7 +122,7 @@ public class WebMvcAutoConfiguration {
 
 生效后, 在容器中放入两个bean:
 
-#### 2.`HiddenHttpMethodFilter`: 过滤页面表单提交的Rest请求
+### 2.`HiddenHttpMethodFilter`: 过滤页面表单提交的Rest请求
 
 > - Rest 请求有: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`
 >- 请求数据包含三部分: **请求行**, **请求头**, **请求体**
@@ -177,11 +177,11 @@ public class HiddenHttpMethodFilter extends OncePerRequestFilter {
 }
 ```
 
-#### 3.`FormContentFilter`:用于分析表单内容, 与前面的过滤器配合使用,
+### 3.`FormContentFilter`:用于分析表单内容, 与前面的过滤器配合使用,
 
 同样只针对`PUT`,`PATCH`,`DELETE`三种HTTP请求
 
-#### 4.静态内部类`WebMvcAutoConfigurationAdapter`
+### 4.静态内部类`WebMvcAutoConfigurationAdapter`
 
 在`WebMvcAutoConfiguration`中有静态内部类`WebMvcAutoConfigurationAdapter`源码如下:
 
@@ -196,7 +196,7 @@ public static class WebMvcAutoConfigurationAdapter implements WebMvcConfigurer, 
 }
 ```
 
-##### 接口`WebMvcConfigurer`
+#### 接口`WebMvcConfigurer`
 
 `WebMvcAutoConfigurationAdapter`实现了`WebMvcConfigurer`接口,可以重写一些有关Web MVC的配置方法,比如添加拦截器、配置视图解析器、配置静态资源等.
 通过重写这些方法,可以根据自己的需要定制化Web MVC的行为.可定制功能有:
@@ -222,7 +222,7 @@ public static class WebMvcAutoConfigurationAdapter implements WebMvcConfigurer, 
 - getMessageCodesResolver:获取消息编码解析器
 - getValidator:获取校验器
 
-##### 静态资源规则源码浅析
+#### 静态资源规则源码浅析
 
 由上面分析,`addResourceHandlers`用来处理静态资源,源码:
 
@@ -297,15 +297,258 @@ private void addResourceHandler(ResourceHandlerRegistry registry,String pattern,
 
 > 如果浏览器访问了一个静态资源 index.js，如果服务这个资源没有发生变化，下次访问的时候就可以直接让浏览器用自己缓存中的东西，而不用给服务器发请求
 
-#### 5.静态内部类`EnableWebMvcConfiguration`
+#### HTTP缓存实验
 
-在`WebMvcAutoConfiguration`中有静态内部类`EnableWebMvcConfiguration`源码如下:
+设置如下:
+
+```yaml
+#1、spring.web：
+# 1.配置国际化的区域信息(locale)
+# 2.静态资源策略(开启、处理链、缓存)
+
+spring:
+  web:
+    resources:
+      add-mappings: true # 开启静态资源映射规则,默认true
+      cache:
+        period: 3600 # 单位是 秒, 此为简要设置, 下面(cache-control)是详细配置,会覆盖period
+        cache-control:
+          max-age: 7200 # 浏览器第一次请求服务器，服务器告诉浏览器此资源缓存7200秒，7200秒以内的所有此资源访问不用发给服务器请求，7200秒以后发请求给服务器
+        use-last-modified: true # 默认true, 使用资源 last-modified 时间，来对比服务器和浏览器的资源是否相同没有变化。相同返回 304
+```
+
+第一次请求:
+
+![第一次请求](https://s2.loli.net/2023/06/23/LX86W9SCGMmNPEl.webp)
+
+第二次请求:
+
+![第二次请求](https://s2.loli.net/2023/06/23/M9q5A2UQWSv7l3E.webp)
+
+### 5.自定义静态资源
+
+大体分为两种方式:
+
+- 配置文件的方式
+- 代码的方式
+
+#### 配置文件
 
 ```java
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(WebProperties.class)
-public static class EnableWebMvcConfiguration extends DelegatingWebMvcConfiguration implements ResourceLoaderAware {
+@Import(EnableWebMvcConfiguration.class)
+@EnableConfigurationProperties({WebMvcProperties.class, WebProperties.class})
+@Order(0)
+public static class WebMvcAutoConfigurationAdapter implements WebMvcConfigurer, ServletContextAware {
+  // ...
+}
+```
+
+与两个配置文件绑定`WebMvcProperties.class`和`WebProperties.class`,
+即以`spring.web`和`spring.mvc`开头的配置
+
+- `spring.web`:可配置locale(国际化)和resources(静态资源相关),具体可查看`WebProperties.class`
+- `spring.mvc`:可配置内容很多,具体可查看`WebMvcProperties.class`
+
+```yaml
+spring:
+  web:
+    resources:
+      add-mappings: true # 开启静态资源映射规则,默认true
+      cache:
+        period: 3600 # 单位是 秒, 此为简要设置, 下面(cache-control)是详细配置,会覆盖period
+        cache-control:
+          max-age: 7200 # 浏览器第一次请求服务器，服务器告诉浏览器此资源缓存7200秒，7200秒以内的所有此资源访问不用发给服务器请求，7200秒以后发请求给服务器
+        use-last-modified: true # 默认true, 使用资源 last-modified 时间，来对比服务器和浏览器的资源是否相同没有变化。相同返回 304
+      static-locations: classpath:/static/,classpath:/test/ # 自定义静态资源目录,按顺序访问
+  mvc:
+    webjars-path-pattern: /webjars/** # 自定义webjars路径前缀,默认:/webjars/**
+    static-path-pattern: /static/** # 静态资源访问路径前缀,默认:/**
+```
+
+#### 代码方式
+
+就是在容器中放置组件:`WebMvcConfigurer`,来配置底层.
+
+注意:
+
+- 默认配置仍有效
+- 加上`@EnableWebMvc`会将默认配置失效
+
+```java
+
+@Configuration
+public class MyConfig {
+  @Bean
+  public WebMvcConfigurer webMvcConfigurer() {// 与下面代码一样效果
+    return new WebMvcConfigurer() {
+      @Override
+      public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("/static");
+      }
+    };
+  }
+}
+```
+
+```java
+
+@Configuration
+public class MyConfig implements WebMvcConfigurer { // 还可以上面写法,效果一样
+  @Override
+  public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    // 保留默认配置
+    WebMvcConfigurer.super.addResourceHandlers(registry);
+
+    // 自定义配置
+    registry.addResourceHandler("/static/**")// 设置静态资源访问前缀,同配置文件中的spring.mvc.static-path-pattern:
+            .addResourceLocations("/static");// 设置静态资源获取路径,同配置文件中的spring.web.resources.static-locations: classpath:/static/
+
+  }
+}
+```
+
+<details> 
+<summary><strong><span style="color: red; ">为什么容器中含有WebMvcConfigurer组件,就能配置底层行为???</span></strong></summary>
+
+1. `WebMvcAutoConfiguration`是一个自动配置类, 它里面有一个`EnableWebMvcConfiguration`
+2. `EnableWebMvcConfiguration`继承与`DelegatingWebMvcConfiguration`, 这两个都生效
+3. `DelegatingWebMvcConfiguration`利用**DI**把容器中所有`WebMvcConfigurer`注入进来
+4. 当调用`DelegatingWebMvcConfiguration`的方法配置底层规则, 而它调用所有`WebMvcConfigurer`的配置底层方法
+
+</details>
+
+## 2.路径匹配
+
+**Spring5.3**之后加入了更多的**请求路径匹配**的实现策略,
+
+以前只支持**AntPathMatcher**策略,现在提供了**PathPatternParser**策略,
+并且可以指定使用哪种策略
+
+默认使用**PathPatternParser**策略
+
+### 1.AntPathMatcher策略
+
+Ant 风格的路径模式语法具有以下规则:
+
+- *：表示**任意数量**的**字符**,0~n
+- ?：表示**任意一个**字符,
+- \**：表示**任意数量**的**目录**
+- {}：表示一个命名的模式**占位符**
+- []：表示字符集合,例如[a-z]表示小写字母
+
+例如:
+
+- <strong>*.html</strong> 匹配任意名称,且扩展名为.html的文件
+- <strong>/folder1/*/*.java</strong> 匹配在folder1目录下的任意两级目录下的.java文件
+- <strong>/folder2/**/*.jsp</strong> 匹配在folder2目录下任意目录深度的.jsp文件
+- <strong>/{type}/{id}.html</strong> 匹配任意文件名为{id}.html,在任意命名的{type}目录下的文件
+
+```text
+注意：Ant 风格的路径模式语法中的特殊字符需要转义,如:
+1. 要匹配文件路径中的星号,则需要转义为\\*
+2. 要匹配文件路径中的问号,则需要转义为\\?
+```
+
+代码测试:
+
+```java
+
+@Slf4j
+@RestController
+public class AntPathController {
+  @GetMapping("/a*/b?/{p1:[a-f]+}")
+  public String hello(HttpServletRequest request,
+                      @PathVariable("p1") String path) {
+
+    log.info("路径变量p1： {}", path);
+    //获取请求路径
+    return request.getRequestURI();
+  }
+}
+```
+
+访问:http://localhost:8080/ads/bd/adf
+
+![AntPathMatcher策略](https://s2.loli.net/2023/06/23/4BUG8Jv7jnVcfR2.webp)
+
+控制台打印:
+> 路径变量p1： adf
+
+### 2.PathPatternParser策略
+
+> - 基准测试下,有**6~8**倍吞吐量提升,降低30%~40%空间分配率
+>- 兼容**AntPathMatcher**语法,并支持更多类型的路径模式
+
+```text
+注意:"**" 多段匹配的支持仅允许在模式末尾使用
+```
+
+### 3.修改默认策略
+
+- 配置文件:spring.mvc.pathmatch.matching-strategy=ant_path_matcher
+- 代码修改:
+
+```java
+/**
+ * 此方法可以修改路径匹配规则
+ * 从spring5.3 开始,默认 PathPatternParser
+ * 想要修改为 AntPathMatcher,则只需设置为空即可
+ */
+@Override
+public void configurePathMatch(PathMatchConfigurer configurer){
+        configurer.setPatternParser(null);
+        }
+```
+
+### 小结一下
+
+- 使用默认的路径匹配规则(`PathPatternParser`)即可,性能高,兼容Ant风格
+- 如果中间需要双星(**),只能换回Ant风格
+
+SpringBoot 底层匹配策略:
+WebMvcAutoConfiguration.java
+
+```java
+@Override
+public void configurePathMatch(PathMatchConfigurer configurer){
+        // 只有 ANT_PATH_MATCHER 才条件成立,创建 new AntPathMatcher()
+        if(this.mvcProperties.getPathmatch()
+        .getMatchingStrategy()==WebMvcProperties.MatchingStrategy.ANT_PATH_MATCHER){
+        configurer.setPathMatcher(new AntPathMatcher());
+        this.dispatcherServletPath.ifAvailable((dispatcherPath)->{
+        String servletUrlMapping=dispatcherPath.getServletUrlMapping();
+        if(servletUrlMapping.equals("/")&&singleDispatcherServlet()){
+        UrlPathHelper urlPathHelper=new UrlPathHelper();
+        urlPathHelper.setAlwaysUseFullPath(true);
+        configurer.setUrlPathHelper(urlPathHelper);
+        }
+        });
+        }
+        }
+```
+
+默认情况,WebMvcProperties.java:
+
+```java
+// 默认情况是:PATH_PATTERN_PARSER
+private MatchingStrategy matchingStrategy=MatchingStrategy.PATH_PATTERN_PARSER;
+
+/////////////////////////////
+// MatchingStrategy 是枚举类
+public enum MatchingStrategy {
+
+  /**
+   * Use the {@code AntPathMatcher} implementation.
+   */
+  ANT_PATH_MATCHER,
+
+  /**
+   * Use the {@code PathPatternParser} implementation.
+   */
+  PATH_PATTERN_PARSER
 
 }
 ```
@@ -338,13 +581,4 @@ public static class EnableWebMvcConfiguration extends DelegatingWebMvcConfigurat
 
 
 
-
-
-
-
-
-
-
-
-    
 
