@@ -2,6 +2,7 @@ package com.fredo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -33,6 +34,17 @@ public class MyConfig {
 //            public void configurePathMatch(PathMatchConfigurer configurer) {
 //                configurer.setPatternParser(null);
 //            }
+
+            /**
+             * 内容协商的相关配置
+             */
+            @Override
+            public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+                // 开启基于请求参数的内容协商功能
+                configurer.favorParameter(true);// 默认:false
+                // 自定义内容协商时使用的参数名
+                configurer.parameterName("type");// 默认:format
+            }
         };
     }
 }

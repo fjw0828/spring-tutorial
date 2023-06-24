@@ -166,9 +166,9 @@ public class HiddenHttpMethodFilter extends OncePerRequestFilter {
             String paramValue = request.getParameter(this.methodParam);
             if (StringUtils.hasLength(paramValue)) {
                 String method = paramValue.toUpperCase(Locale.ENGLISH);
-                if (ALLOWED_METHODS.contains(method)) {
-                  requestToUse = new HttpMethodRequestWrapper(request, method);
-                }
+              if (ALLOWED_METHODS.contains(method)) {
+                requestToUse = new HttpMethodRequestWrapper(request, method);
+              }
             }
         }
       filterChain.doFilter(requestToUse, response);
@@ -553,7 +553,149 @@ public enum MatchingStrategy {
 }
 ```
 
+## 3.内容协商
 
+### 1.HTTP内容协商
+
+在**HTTP**协议中,**内容协商**是一种机制,用于为同一**URI**提供资源不同的表示形式,以帮助用户代理指定最适合用户的表示形式
+例如,哪种文档语言,哪种图片格式或者哪种内容编码
+
+内容协商通常有两种方式,服务端驱动型内容协商和代理驱动型内容协商
+
+#### 服务端驱动型内容协商
+
+在服务端驱动型内容协商或者主动内容协商中,浏览器（或者其他任何类型的用户代理）会随同 URL 发送一系列的 HTTP 标头.
+这些标头描述了用户倾向的选择.服务器则以此为线索,通过内部算法来选择最佳方案提供给客户端.如果它不能提供一个合适的资源,
+它可能使用 406（Not Acceptable）、415（Unsupported Media Type）进行响应并为其支持的媒体类型设置标头.
+例如，分别对 POST 和 PATCH 请求使用 Accept-Post (en-US) 或 Accept-Patch 标头
+
+<img src="https://s2.loli.net/2023/06/24/Mxv32C8Ag6DQKS7.webp" alt="服务端驱动型内容协商"/>
+
+HTTP/1.1 规范指定了一系列的标准标头用于启动服务端驱动型内容协商（Accept、Accept-Charset、Accept-Encoding、Accept-Language）
+
+| 请求头             | 请求头说明        | 响应头              | 响应头说明        |
+|-----------------|--------------|------------------|--------------|
+| Accept          | 告诉服务端需要的类型   | Content-Type     | 告诉客户端响应的媒体类型 |
+| Accept-Language | 告诉服务端需要的语言   | Content-Language | 告诉客户端响应的语言   |
+| Accept-Charset  | 告诉服务端需要的字符集  | Content-Charset  | 告诉客户端响应的字符集  |
+| Accept-Encoding | 告诉服务端需要的压缩方式 | Content-Encoding | 告诉客户端响应的压缩方式 |
+
+#### 代理驱动型内容协商
+
+从 HTTP 协议制定之初，该协议就准许另外一种协商机制：代理驱动型内容协商，或称为响应式协商。
+在这种协商机制中，当面临不明确的请求时，服务器会返回一个页面，其中包含了可供选择的资源的链接。
+资源呈现给用户，由用户做出选择.但是HTTP 标准没有明确指定提供可选资源链接的页面的格式，这阻碍了该过程的无痛自动化。
+除了退回至服务端驱动型内容协商外，这种自动化方法几乎无一例外都是通过脚本技术来完成的，
+尤其是 JavaScript 重定向技术：在检测了协商的条件之后，脚本会触发重定向动作。
+另外一个问题是，为了获得实际的资源，需要额外发送一次请求，减慢了将资源呈现给用户的速度
+
+### 2.SpringMVC的内容协商
+
+SpringMVC实现了HTTP内容协商的同时,又进行了扩展.
+支持4种内容协商方式：HTTP首部Accept，扩展名，请求参数，或者固定类型
+
+### 3.SpringBoot的内容协商
+
+由于SpringBoot的`web场景启动器`整合了SpringMVC,因此SpringBoot引入`web场景启动器`后即可拥有内容协商功能
+
+SpringBoot有两种方式:基于请求头和基于请求参数的实现
+
+- 基于请求头内容协商:(默认开启)
+  - 客户端向服务端发送请求，携带HTTP标准的**Accept请求头**
+  - **Accept**: `application/json`、`text/xml`、`text/yaml`
+  - 服务端根据客户端请求头期望的数据类型进行动态返回
+- 基于请求参数内容协商:(需要开启)
+  - 发送请求: GET /person?format=json
+  - 匹配到 @GetMapping("/person")
+  - 根据参数协商,优先返回**json**类型数据,(需要开启参数匹配设置)
+  - 发送请求 GET /person?format=xml,优先返回**xml**类型数据
+
+![SpringBoot内容协商](https://s2.loli.net/2023/06/24/UljfBkXywHdnAxr.webp)
+
+### 4.测试
+
+默认情况,返回JSON
+
+<details> 
+<summary><strong><span style="color: red; ">是因为???</span></strong></summary>
+<strong>web场景</strong>依赖
+<strong>spring-boot-starter-json</strong><br/>
+<strong>spring-boot-starter-json</strong>依赖<strong>jackson-databind</strong><br/>
+<strong>jackson-databind</strong>可以将对象转为JSON
+</details>
+
+效果:
+![发请求](https://s2.loli.net/2023/06/24/2srgE9f1NoOjAwH.webp)
+![请求结果](https://s2.loli.net/2023/06/24/G59OC74LfhFrb3H.webp)
+
+修改为XML格式:
+
+1. 引依赖
+
+```xml
+
+<dependency>
+  <groupId>com.fasterxml.jackson.dataformat</groupId>
+  <artifactId>jackson-dataformat-xml</artifactId>
+</dependency>
+```
+
+2. 标注解
+
+```java
+
+@JacksonXmlRootElement  // 可以写出为xml文档
+@Data
+public class Person {
+  private long id;
+  private String name;
+  private int age;
+}
+```
+
+效果:
+
+![内容协商-xml](https://s2.loli.net/2023/06/24/vG4JUTPusNzAWfl.webp)
+
+参数演示:
+
+需要开启**基于请求参数**的内容协商
+
+代码版:
+
+```java
+/**
+ * 内容协商的相关配置
+ */
+@Override
+public void configureContentNegotiation(ContentNegotiationConfigurer configurer){
+        // 开启基于请求参数的内容协商功能
+        configurer.favorParameter(true);// 默认:false
+        // 自定义内容协商时使用的参数名
+        configurer.parameterName("type");// 默认:format
+        }
+```
+
+配置文件版:
+
+```properties
+# 开启基于请求参数的内容协商功能。 默认参数名：format。 默认此功能不开启
+spring.mvc.contentnegotiation.favor-parameter=true
+# 指定内容协商时使用的参数名。默认是 format
+spring.mvc.contentnegotiation.parameter-name=type
+```
+
+![](https://s2.loli.net/2023/06/24/1V7okFrjKUIRPY8.webp)
+
+![](https://s2.loli.net/2023/06/24/QlobhemNGY6rCgd.webp)
+
+![](https://s2.loli.net/2023/06/24/GcSY74PgelosNt3.webp)
+
+![](https://s2.loli.net/2023/06/24/bjuMB2hftdnPcaI.webp)
+
+### 5.内容协商原理浅析
+
+## 4.模板引擎
 
 
 
