@@ -283,8 +283,8 @@ private void addResourceHandler(ResourceHandlerRegistry registry,String pattern,
 小结一下:
 静态资源访问规则如下:
 
-- 规则一 访问： /webjars/**路径就去 classpath:/META-INF/resources/webjars/下找资源.
-- 规则二 访问： /**路径就去 静态资源默认的四个位置找资源
+- 规则一 访问： `/webjars/**`路径就去`classpath:/META-INF/resources/webjars/`下找资源.
+- 规则二 访问： `/**`路径就去 静态资源默认的四个位置找资源
   - `classpath:/META-INF/resources/`
   - `classpath:/resources/`
   - `classpath:/static/`
@@ -296,6 +296,8 @@ private void addResourceHandler(ResourceHandlerRegistry registry,String pattern,
   - useLastModified：是否使用最后一次修改, 配合HTTP Cache规则, 如果浏览器访问了一个静态资源
 
 > 如果浏览器访问了一个静态资源 index.js，如果服务这个资源没有发生变化，下次访问的时候就可以直接让浏览器用自己缓存中的东西，而不用给服务器发请求
+
+
 
 #### HTTP缓存实验
 
@@ -694,6 +696,50 @@ spring.mvc.contentnegotiation.parameter-name=type
 ![](https://s2.loli.net/2023/06/24/bjuMB2hftdnPcaI.webp)
 
 ### 5.内容协商原理浅析
+
+> 其实就是
+>- HttpMessageConverter 怎么工作？合适工作？
+>- 定制 HttpMessageConverter 来实现多端内容协商
+>- 编写WebMvcConfigurer提供的configureMessageConverters底层，修改底层的MessageConverter
+
+#### 1.`@ResponseBody`由**HttpMessageConverter**处理
+
+> 标注了`@ResponseBody`的返回值 将会由支持它的**HttpMessageConverter**写给浏览器
+
+- 如果**controller**方法的返回值标注了`@ResponseBody`注解
+  - 请求进来先来到**DispatcherServlet**的`doDispatch()`进行处理
+  - 找到一个**HandlerAdapter**适配器。利用适配器执行目标方法
+  - `RequestMappingHandlerAdapter`来执行，调用`invokeHandlerMethod()`来执行目标方法
+  - 目标方法执行之前，准备好两个东西
+    - HandlerMethodArgumentResolver：参数解析器，确定目标方法每个参数值
+    - HandlerMethodReturnValueHandler：返回值处理器，确定目标方法的返回值改怎么处理
+  - `RequestMappingHandlerAdapter`里面的`invokeAndHandle()`真正执行目标方法
+  - 目标方法执行完成，会返回**返回值对象**
+  - 找到一个合适的返回值处理器`HandlerMethodReturnValueHandler`
+  - 最终找到`RequestResponseBodyMethodProcessor`能处理 标注了`@ResponseBody`注解的方法
+  - `RequestResponseBodyMethodProcessor`调用`writeWithMessageConverters`,利用`MessageConverter`把返回值写出去
+
+- `HttpMessageConverter`会先进行内容协商
+  - 遍历所有的`MessageConverter`看谁支持这种内容类型的数据
+  - 默认`MessageConverter`有以下:
+  - ![](https://s2.loli.net/2023/06/25/bGrtcC3mV4du52F.webp)
+  - 最终因为要`json`所以`MappingJackson2HttpMessageConverter`支持写出json
+  - jackson用`ObjectMapper`把对象写出去
+
+#### 2.WebMvcAutoConfiguration提供几种默认HttpMessageConverters
+
+`EnableWebMvcConfiguration`通过`addDefaultHttpMessageConverters`添加了默认的`MessageConverter`;
+如下:
+
+- `ByteArrayHttpMessageConverter`： 支持字节数据读写
+- `StringHttpMessageConverter`: 支持字符串读写
+- `ResourceHttpMessageConverter`: 支持资源读写
+- `ResourceRegionHttpMessageConverter`: 支持分区资源写出
+- `AllEncompassingFormHttpMessageConverter`: 支持表单xml/json读写
+- `MappingJackson2HttpMessageConverter`: 支持请求响应体Json读写
+
+> 系统提供默认的MessageConverter 功能有限，仅用于json或者普通返回数据。
+> 额外增加新的内容协商功能，必须增加新的HttpMessageConverter
 
 ## 4.模板引擎
 
