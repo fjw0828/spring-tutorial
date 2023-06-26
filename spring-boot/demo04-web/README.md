@@ -743,7 +743,35 @@ spring.mvc.contentnegotiation.parameter-name=type
 
 ## 4.模板引擎
 
+> 除了RESTWeb服务，您还可以使用SpringMVC来提供动态HTML内容。
+> SpringMVC支持多种模板技术，包括Thymelaf、FreeMarker和JSP。
+> 此外，许多其他模板引擎也包含了它们自己的SpringMVC集成。
 
+SpringBoot自动配置支持的模板引擎有:
+
+- [FreeMarker](https://freemarker.apache.org/docs/)
+- [Groovy](https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_the_markuptemplateengine)
+- [Thymeleaf](https://www.thymeleaf.org/)
+- [Mustache](https://mustache.github.io/)
+
+### 1.整合Thymeleaf
+
+```xml
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+```
+
+由自动配置原理知:
+
+1. 开启了`org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration`自动配置
+2. 属性绑定在**ThymeleafProperties**中，对应配置文件`spring.thymeleaf`内容
+3. 默认情况,模板页面在`classpath:/templates`文件夹下
+  1. 默认情况,模板页面前缀`classpath:/templates/`
+  2. 默认情况,模板页面后缀`.html`
+  3. 达到效果: `classpath:/templates/` + 页面名 + `.html`
 
 
 

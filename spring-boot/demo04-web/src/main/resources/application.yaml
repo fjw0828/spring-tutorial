@@ -16,3 +16,9 @@
 #    webjars-path-pattern: /webjars/** # 自定义webjars路径前缀,默认:/webjars/**
 #    static-path-pattern: /static/** # 静态资源访问路径前缀,默认:/**
 
+# 模板引擎配置
+spring:
+  thymeleaf:
+    prefix: classpath:/templates/ #默认值
+    suffix: .html #默认值
+
