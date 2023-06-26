@@ -10,8 +10,8 @@ public class ThymeleafTestController {
     @GetMapping("test")
     public String hello(Model model) {
 
-        String data = "<span style='color:red'>Fredo</span>";
-        model.addAttribute("data", data);
+        String name = "<span style='color:red'>Fredo</span>";
+        model.addAttribute("name", name);
         return "thymeleaf";
     }
 }
