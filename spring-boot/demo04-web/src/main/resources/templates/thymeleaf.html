@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thymeleaf测试</title>
+</head>
+<body>
+<!--xmlns:th="http://www.thymeleaf.org"-->
+<!--添加thymeleaf的命名空间.可以有相关代码提示-->
+
+<!--演示text和utext 区别-->
+<h1>你好,<span th:text="${data}"></span></h1>
+<h1>你好,<span th:utext="${data}"></span></h1>
+</body>
+</html>

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-public class WelcomeController {
+public class ThymeleafTestController {
 
     /**
      * @PathParam: 获取请求行中的参数.servlet提供
@@ -16,7 +16,7 @@ public class WelcomeController {
     @GetMapping("hello")
     public String hello(@RequestParam("name") String name, Model model) {
 
-        model.addAttribute("msg", name);
-        return "hello";
+        model.addAttribute("data", name);
+        return "thymeleaf";
     }
 }
