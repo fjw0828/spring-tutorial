@@ -17,6 +17,48 @@
 <h2>你好,<span th:utext="${name}"></span></h2>
 <hr/>
 
+<!--
+    th:html属性名;可以动态替换属性值
+    多个属性需要动态替换时,可以用:
+    th:attr=""
+-->
+<h1>动态属性</h1>
+<h2 th:attr="style=${style}">Hello World!!! </h2>
+<hr/>
+
+<h1>表达式:动态取值</h1>
+${}：变量取值；使用model共享给页面的值都直接用${}<br>
+@{}：专门用于获取url路径,项目默认根目录是:/时,${}和@{}一样,当设置项目根目录后@{}仍适用<br>
+#{}：国际化消息<br>
+~{}：片段引用<br>
+*{}：变量选择：需要配合th:object绑定对象<br>
+<hr/>
+
+<h1>系统工具&内置对象：<a
+        href="https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html#appendix-a-expression-basic-objects">
+    官方文档</a></h1>
+● param：请求参数对象<br>
+● session：session对象<br>
+● application：application对象<br>
+● #execInfo：模板执行信息<br>
+● #messages：国际化消息<br>
+● #uris：uri/url工具<br>
+● #conversions：类型转换工具<br>
+● #dates：日期工具，是java.util.Date对象的工具类<br>
+● #calendars：类似#dates，只不过是java.util.Calendar对象的工具类<br>
+● #temporals： JDK8+ java.time API 工具类<br>
+● #numbers：数字操作工具<br>
+● #strings：字符串操作<br>
+● #objects：对象操作<br>
+● #bools：bool操作<br>
+● #arrays：array工具<br>
+● #lists：list工具<br>
+● #sets：set工具<br>
+● #maps：map工具<br>
+● #aggregates：集合聚合工具（sum、avg）<br>
+● #ids：id生成工具<br>
+<hr/>
+
 
 </body>
 </html>

@@ -754,7 +754,7 @@ SpringBoot自动配置支持的模板引擎有:
 - [Thymeleaf](https://www.thymeleaf.org/)
 - [Mustache](https://mustache.github.io/)
 
-### 1.整合Thymeleaf
+### 整合Thymeleaf
 
 ```xml
 

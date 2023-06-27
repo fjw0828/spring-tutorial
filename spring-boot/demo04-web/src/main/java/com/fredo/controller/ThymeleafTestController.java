@@ -12,6 +12,10 @@ public class ThymeleafTestController {
 
         String name = "<span style='color:red'>Fredo</span>";
         model.addAttribute("name", name);
+
+        String style = "text-decoration: underline wavy red;";
+        model.addAttribute("style", style);
+
         return "thymeleaf";
     }
 }
