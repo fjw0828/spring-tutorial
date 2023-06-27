@@ -773,9 +773,7 @@ SpringBoot自动配置支持的模板引擎有:
   2. 默认情况,模板页面后缀`.html`
   3. 达到效果: `classpath:/templates/` + 页面名 + `.html`
 
-
-
-
+## 5.错误处理
 
 
 
