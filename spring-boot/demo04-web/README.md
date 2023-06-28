@@ -769,12 +769,30 @@ SpringBoot自动配置支持的模板引擎有:
 1. 开启了`org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration`自动配置
 2. 属性绑定在**ThymeleafProperties**中，对应配置文件`spring.thymeleaf`内容
 3. 默认情况,模板页面在`classpath:/templates`文件夹下
-  1. 默认情况,模板页面前缀`classpath:/templates/`
-  2. 默认情况,模板页面后缀`.html`
-  3. 达到效果: `classpath:/templates/` + 页面名 + `.html`
+1. 默认情况,模板页面前缀`classpath:/templates/`
+2. 默认情况,模板页面后缀`.html`
+3. 达到效果: `classpath:/templates/` + 页面名 + `.html`
 
 ## 5.错误处理
 
+### 1.默认机制
+
+SpringBoot在web场景下,自动装配了错误处理`ErrorMvcAutoConfiguration`
+
+```java
+// Load before the main WebMvcAutoConfiguration so that the error View is available
+// 在WebMvcAutoConfiguration自动装配之前
+@AutoConfiguration(before = WebMvcAutoConfiguration.class)
+// 条件:普通的servlet web类型
+@ConditionalOnWebApplication(type = Type.SERVLET)
+// 条件:有Servlet和DispatcherServlet类
+@ConditionalOnClass({Servlet.class, DispatcherServlet.class})
+// 绑定配置文件:server.*和spring.mvc.*
+@EnableConfigurationProperties({ServerProperties.class, WebMvcProperties.class})
+public class ErrorMvcAutoConfiguration {
+  //...
+}
+```
 
 
 
