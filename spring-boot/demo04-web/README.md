@@ -775,7 +775,7 @@ SpringBoot自动配置支持的模板引擎有:
 
 ## 5.错误处理
 
-### 1.默认机制
+### 默认机制
 
 SpringBoot在**web场景**下,当应用程序发生错误或异常时,SpringBoot会自动应用`ErrorMvcAutoConfiguration`进行配置.
 
@@ -844,7 +844,7 @@ public class ErrorController {
 }
 ```
 
-<img src="https://image.fu-jw.com/img/2023/07/03/64a232aac8fa8.png"/>
+<img alt="mvc处理错误" src="https://image.fu-jw.com/img/2023/07/03/64a232aac8fa8.png"/>
 
 统一错误处理:
 
@@ -867,16 +867,18 @@ public class GlobalExceptionHandler {
 }
 ```
 
-<img src="https://image.fu-jw.com/img/2023/07/03/64a232c9bbac2.png"/>
+<img alt="mvc统一处理错误" src="https://image.fu-jw.com/img/2023/07/03/64a232c9bbac2.png"/>
 
-### SpringBoot处理错误
+### SpringBoot错误原理浅析
 
 自动配置类`ErrorMvcAutoConfiguration`, 主要包含以下功能:
 
 #### 注册组件: BasicErrorController
 
 这是一个默认的错误处理控制器,用于处理一般的错误请求.
-它会根据请求的`Accept`头部信息返回对应的错误响应,比如**JSON**,**XML**或**HTML**格式.
+
+可以在配置文件中配置:`server.error.path=/error`(默认值)
+当发生错误以后,将SpringMVC不能处理的错误请求转发给`/error`进行处理
 
 ```java
 
@@ -890,25 +892,538 @@ public class BasicErrorController extends AbstractErrorController {
 }
 ```
 
+它会根据请求的`Accept`头部信息返回对应的错误响应,比如**JSON**,**XML**或**HTML**格式.
+**内容协商机制**
 
+```java
+// "text/html"
+// 返回html页面
+@RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
+public ModelAndView errorHtml(HttpServletRequest request,HttpServletResponse response){
+        // 获取请求的状态码
+        HttpStatus status=getStatus(request);
+        Map<String, Object> model=Collections
+        .unmodifiableMap(getErrorAttributes(request,getErrorAttributeOptions(request,MediaType.TEXT_HTML)));
+        response.setStatus(status.value());
+        // 得到解析的错误视图
+        ModelAndView modelAndView=resolveErrorView(request,response,status,model);
+        // 返回上面解析的视图,或者新建一个error视图(SpringBoot默认有一个error页面,状态码999)
+        return(modelAndView!=null)?modelAndView:new ModelAndView("error",model);
+        }
 
+// 返回 ResponseEntity,即JSON数据
+@RequestMapping
+public ResponseEntity<Map<String, Object>>error(HttpServletRequest request){
+        HttpStatus status=getStatus(request);
+        if(status==HttpStatus.NO_CONTENT){
+        return new ResponseEntity<>(status);
+        }
+        Map<String, Object> body=getErrorAttributes(request,getErrorAttributeOptions(request,MediaType.ALL));
+        return new ResponseEntity<>(body,status);
+        }
+```
 
+**错误视图解析:**
 
+```java
+//1、解析错误的自定义视图地址
+ModelAndView modelAndView=resolveErrorView(request,response,status,model);
+//2、如果解析不到错误页面的地址，默认的错误页就是 error
+        return(modelAndView!=null)?modelAndView:new ModelAndView("error",model);
+```
 
+**1.解析错误视图:**
 
+```java
+protected ModelAndView resolveErrorView(HttpServletRequest request,HttpServletResponse response,HttpStatus status,
+        Map<String, Object> model){
+        // 遍历错误视图解析器:errorViewResolvers
+        for(ErrorViewResolver resolver:this.errorViewResolvers){
+        ModelAndView modelAndView=resolver.resolveErrorView(request,status,model);
+        if(modelAndView!=null){
+        return modelAndView;
+        }
+        }
+        return null;
+        }
+```
 
+在自动配置类,会将**默认的错误视图解析器**放在容器中
 
+```java
 
+@Configuration(proxyBeanMethods = false)
+// 绑定配置文件中 web.* 和 web.mvc.*
+@EnableConfigurationProperties({WebProperties.class, WebMvcProperties.class})
+static class DefaultErrorViewResolverConfiguration {
 
+  private final ApplicationContext applicationContext;
 
+  private final Resources resources;
 
+  DefaultErrorViewResolverConfiguration(ApplicationContext applicationContext, WebProperties webProperties) {
+    this.applicationContext = applicationContext;
+    this.resources = webProperties.getResources();
+  }
 
+  @Bean
+  @ConditionalOnBean(DispatcherServlet.class)
+  @ConditionalOnMissingBean(ErrorViewResolver.class)
+  DefaultErrorViewResolver conventionErrorViewResolver() {
+    // 在容器中放入默认错误视图解析器
+    return new DefaultErrorViewResolver(this.applicationContext, this.resources);
+  }
 
+}
+```
 
+**默认的错误视图解析过程:**
 
+```java
+@Override
+public ModelAndView resolveErrorView(HttpServletRequest request,HttpStatus status,Map<String, Object> model){
+        // 1. 获取状态码
+        // 2. 根据状态码解析错误视图(如: 404 500 等)    
+        ModelAndView modelAndView=resolve(String.valueOf(status.value()),model);
+        // 3. 状态码没有精确匹配,则模糊匹配(如:4xx 5xx, 注意只有这俩)
+        if(modelAndView==null&&SERIES_VIEWS.containsKey(status.series())){
+        modelAndView=resolve(SERIES_VIEWS.get(status.series()),model);
+        }
+        return modelAndView;
+        }
+// 具体的解析过程
+private ModelAndView resolve(String viewName,Map<String, Object> model){
+        // 错误视图名: error/404 或 error/4xx    
+        String errorViewName="error/"+viewName;
+        TemplateAvailabilityProvider provider=this.templateAvailabilityProviders.getProvider(errorViewName,
+        this.applicationContext);
+        if(provider!=null){
+        // 有就返回
+        return new ModelAndView(errorViewName,model);
+        }
+        // 没有, 继续
+        return resolveResource(errorViewName,model);
+        }
 
+// 继续解析错误视图, 在静态资源目录下查找
+private ModelAndView resolveResource(String viewName,Map<String, Object> model){
+        // 遍历四个静态资源目录:classpath:/META-INF/resources/","classpath:/resources/",
+        // "classpath:/static/", "classpath:/public/    
+        for(String location:this.resources.getStaticLocations()){
+        try{
+        Resource resource=this.applicationContext.getResource(location);
+        resource=resource.createRelative(viewName+".html");
+        if(resource.exists()){
+        return new ModelAndView(new HtmlResourceView(resource),model);
+        }
+        }
+        catch(Exception ex){
+        }
+        }
+        return null;
+        }
+```
 
+**2.解析不到错误视图:**
+精确状态码以及模糊状态码都没有匹配时,则映射到error视图
 
+在template目录下创建`error.html`就会返回(注意:将上面统一错误处理注释)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+模板: error 页
+</body>
+</html>
+```
+
+效果:
+
+<img alt="error页" src="https://image.fu-jw.com/img/2023/07/03/64a259a289e8c.png"/>
+
+**如果error视图页没有:**
+
+自动配置类`ErrorMvcAutoConfiguration`,在容器中放入了`error`组件,提供了默认白页功能:
+
+```java
+
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(prefix = "server.error.whitelabel", name = "enabled", matchIfMissing = true)
+@Conditional(ErrorTemplateMissingCondition.class)
+protected static class WhitelabelErrorViewConfiguration {
+
+  private final StaticView defaultErrorView = new StaticView();
+
+  @Bean(name = "error")
+  @ConditionalOnMissingBean(name = "error")
+  public View defaultErrorView() {
+    return this.defaultErrorView;
+  }
+
+  // If the user adds @EnableWebMvc then the bean name view resolver from
+  // WebMvcAutoConfiguration disappears, so add it back in to avoid disappointment.
+  @Bean
+  @ConditionalOnMissingBean
+  public BeanNameViewResolver beanNameViewResolver() {
+    BeanNameViewResolver resolver = new BeanNameViewResolver();
+    resolver.setOrder(Ordered.LOWEST_PRECEDENCE - 10);
+    return resolver;
+  }
+
+}
+```
+
+创建白页:
+
+```java
+private static class StaticView implements View {
+  private static final MediaType TEXT_HTML_UTF8 = new MediaType("text", "html", StandardCharsets.UTF_8);
+  private static final Log logger = LogFactory.getLog(StaticView.class);
+
+  @Override
+  public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
+          throws Exception {
+    if (response.isCommitted()) {
+      String message = getMessage(model);
+      logger.error(message);
+      return;
+    }
+    response.setContentType(TEXT_HTML_UTF8.toString());
+    StringBuilder builder = new StringBuilder();
+    Object timestamp = model.get("timestamp");
+    Object message = model.get("message");
+    Object trace = model.get("trace");
+    if (response.getContentType() == null) {
+      response.setContentType(getContentType());
+    }
+    builder.append("<html><body><h1>Whitelabel Error Page</h1>")
+            .append("<p>This application has no explicit mapping for /error, so you are seeing this as a fallback.</p>")
+            .append("<div id='created'>")
+            .append(timestamp)
+            .append("</div>")
+            .append("<div>There was an unexpected error (type=")
+            .append(htmlEscape(model.get("error")))
+            .append(", status=")
+            .append(htmlEscape(model.get("status")))
+            .append(").</div>");
+    if (message != null) {
+      builder.append("<div>").append(htmlEscape(message)).append("</div>");
+    }
+    if (trace != null) {
+      builder.append("<div style='white-space:pre-wrap;'>").append(htmlEscape(trace)).append("</div>");
+    }
+    builder.append("</body></html>");
+    response.getWriter().append(builder.toString());
+  }
+```
+
+### 小结一下
+
+先尝试解析错误页, 解析失败则在静态资源目录下查找
+
+1. **解析**一个错误页
+  - 如果发生了500、404、503、403 这些错误
+    - 如果有模板引擎，默认在`classpath:/templates/error/精确码.html`
+    - 如果没有模板引擎，在静态资源文件夹下找`精确码.html`
+  - 如果匹配不到`精确码.html`这些精确的错误页，就去找`5xx.html`, `4xx.html`**模糊匹配**
+    - 如果有模板引擎，默认在`classpath:/templates/error/5xx.html`
+    - 如果没有模板引擎，在静态资源文件夹下找`5xx.html`
+2. 如果模板引擎路径`templates`下有`error.html`页面, 就直接渲染
+
+### 自定义错误响应
+
+- 自定义json响应
+  - 使用@ControllerAdvice + @ExceptionHandler 进行统一异常处理
+- 自定义页面响应
+  - 根据boot的错误页面规则，自定义页面模板
+
+### 最佳实践
+
+- 前后分离
+  - 后台发生的所有错误, `@ControllerAdvice` + `@ExceptionHandler`进行统一异常处理
+- 服务端页面渲染
+  - 不可预知的错误,HTTP码表示的服务器端或客户端错误
+    - 给`classpath:/templates/error/`下面，放常用精确的错误码页面。`500.html`，`404.html`
+    - 给`classpath:/templates/error/`下面，放通用模糊匹配的错误码页面。 `5xx.html`，`4xx.html`
+  - 发生业务错误
+    - **核心业务**, 每一种错误, 都应该代码控制, 跳转到自己**定制的错误页**
+    - **通用业务**, `classpath:/templates/error.html`页面, 显示错误信息
+
+无论是返回页面或者JSON数据, 可用的**Model**数据都一样, 如下:
+<img alt="model" src="https://image.fu-jw.com/img/2023/07/03/64a2742fd9f6c.png"/>
+
+## 6.嵌入式容器
+
+Servlet容器：管理、运行Servlet组件的环境，一般指服务器
+
+Servlet三大组件:
+
+- Servlet, 处理请求
+- Filter, 过滤请求
+- Listener, 监听请求
+
+### 自动配置原理浅析
+
+先从自动配置类开始
+
+```java
+
+@AutoConfiguration(after = SslAutoConfiguration.class)
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
+// 生效条件:实现ServletRequest接口的Servlet请求
+@ConditionalOnClass(ServletRequest.class)
+// 生效条件:是SERVLET类型的程序
+@ConditionalOnWebApplication(type = Type.SERVLET)
+// 绑定配置文件, server.*
+@EnableConfigurationProperties(ServerProperties.class)
+// 批量导入一些嵌入式服务器类
+@Import({ServletWebServerFactoryAutoConfiguration.BeanPostProcessorsRegistrar.class,
+        ServletWebServerFactoryConfiguration.EmbeddedTomcat.class,
+        ServletWebServerFactoryConfiguration.EmbeddedJetty.class,
+        ServletWebServerFactoryConfiguration.EmbeddedUndertow.class})
+public class ServletWebServerFactoryAutoConfiguration {
+  // ...
+}
+```
+
+嵌入式的三大服务器:`Tomcat`、`Jetty`、`Undertow`
+
+- 导入`Tomcat`、`Jetty`、`Undertow`都有条件注解(系统中有对应的类才行,导包即可)
+- 默认`Tomcat`配置生效.**web场景**默认导入`spring-boot-starter-tomcat`
+- `Tomcat`配置生效后,会在容器中放入`TomcatServletWebServerFactory`组件,用于创建容器的工厂类
+
+```java
+
+@Configuration(proxyBeanMethods = false)
+class ServletWebServerFactoryConfiguration {
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass({Servlet.class, Tomcat.class, UpgradeProtocol.class})
+  @ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)
+  static class EmbeddedTomcat {
+
+    @Bean
+    TomcatServletWebServerFactory tomcatServletWebServerFactory(
+            ObjectProvider<TomcatConnectorCustomizer> connectorCustomizers,
+            ObjectProvider<TomcatContextCustomizer> contextCustomizers,
+            ObjectProvider<TomcatProtocolHandlerCustomizer<?>> protocolHandlerCustomizers) {
+      TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
+      factory.getTomcatConnectorCustomizers().addAll(connectorCustomizers.orderedStream().toList());
+      factory.getTomcatContextCustomizers().addAll(contextCustomizers.orderedStream().toList());
+      factory.getTomcatProtocolHandlerCustomizers().addAll(protocolHandlerCustomizers.orderedStream().toList());
+      return factory;
+    }
+
+  }
+  // 其他容器...
+}
+```
+
+- `TomcatServletWebServerFactory`工厂类中,具体的创建方法:
+
+```java
+@Override
+// 获取web服务器
+public WebServer getWebServer(ServletContextInitializer...initializers){
+        if(this.disableMBeanRegistry){
+        Registry.disableRegistry();
+        }
+        // 创建Tomcat容器
+        Tomcat tomcat=new Tomcat();
+        File baseDir=(this.baseDirectory!=null)?this.baseDirectory:createTempDir("tomcat");
+        tomcat.setBaseDir(baseDir.getAbsolutePath());
+        for(LifecycleListener listener:this.serverLifecycleListeners){
+        tomcat.getServer().addLifecycleListener(listener);
+        }
+        Connector connector=new Connector(this.protocol);
+        connector.setThrowOnFailure(true);
+        tomcat.getService().addConnector(connector);
+        customizeConnector(connector);
+        tomcat.setConnector(connector);
+        tomcat.getHost().setAutoDeploy(false);
+        configureEngine(tomcat.getEngine());
+        for(Connector additionalConnector:this.additionalTomcatConnectors){
+        tomcat.getService().addConnector(additionalConnector);
+        }
+        prepareContext(tomcat.getHost(),initializers);
+        return getTomcatWebServer(tomcat);
+        }
+```
+
+### Tomcat容器创建时机
+
+SpringApplication.java
+
+```java
+public ConfigurableApplicationContext run(String...args){
+        // ...
+        refreshContext(context); // 刷新上下文
+        afterRefresh(context,applicationArguments);
+        // ...    
+        }
+// ...
+
+// 刷新上下文
+private void refreshContext(ConfigurableApplicationContext context){
+        if(this.registerShutdownHook){
+        shutdownHook.registerApplicationContext(context);
+        }
+// 刷新
+        refresh(context);
+        }
+
+protected void refresh(ConfigurableApplicationContext applicationContext){
+        applicationContext.refresh();
+        }
+```
+
+在**web场景**下,
+ServletWebServerApplicationContext.java
+
+```java
+@Override
+public final void refresh()throws BeansException,IllegalStateException{
+        try{
+        // 刷新
+        super.refresh();
+        }
+        catch(RuntimeException ex){
+        WebServer webServer=this.webServer;
+        if(webServer!=null){
+        webServer.stop();
+        }
+        throw ex;
+        }
+        }
+```
+
+AbstractApplicationContext.java
+
+```java
+@Override
+// 创建容器十二步
+public void refresh()throws BeansException,IllegalStateException{
+synchronized (this.startupShutdownMonitor){
+        StartupStep contextRefresh=this.applicationStartup.start("spring.context.refresh");
+
+        // 1.准备上下文内容
+        // Prepare this context for refreshing.
+        prepareRefresh();
+
+        // 2.获取刷新的bean工厂
+        // Tell the subclass to refresh the internal bean factory.
+        ConfigurableListableBeanFactory beanFactory=obtainFreshBeanFactory();
+
+        // 3.准备上下文用到的bean工厂,如:类加载器,后置处理器
+        // Prepare the bean factory for use in this context.
+        prepareBeanFactory(beanFactory);
+
+        try{
+        // 4.通过编程方式修改BeanFactory的配置，比如添加自定义的BeanDefinition，修改属性值，注册BeanPostProcessor等等。
+        // 通过这种方式，开发人员可以对Spring容器进行更灵活和定制化的配置
+        // Allows post-processing of the bean factory in context subclasses.
+        postProcessBeanFactory(beanFactory);
+
+        // 5.执行所有已注册的BeanFactoryPostProcessor的postProcessBeanFactory方法
+        StartupStep beanPostProcess=this.applicationStartup.start("spring.context.beans.post-process");
+        // Invoke factory processors registered as beans in the context.
+        invokeBeanFactoryPostProcessors(beanFactory);
+
+        // 6.注册所有的BeanPostProcessor实例.
+        // 允许开发人员在bean实例化和依赖注入的过程中对bean进行增强或定制
+        // Register bean processors that intercept bean creation.
+        registerBeanPostProcessors(beanFactory);
+        beanPostProcess.end();
+
+        // 7.初始化上下文的消息资源
+        // 消息资源用于国际化和本地化的目的，它可以根据不同的语言和区域设置，提供相应的文本消息
+        // Initialize message source for this context.
+        initMessageSource();
+
+        // 8.初始化应用程序事件的多播器,使得应用程序能够对事件进行发布和监听
+        // 事件机制是一种通信机制，用于在不同的组件之间传递消息和触发相应的处理逻辑
+        // Initialize event multicaster for this context.
+        initApplicationEventMulticaster();
+
+        // 9.容器刷新过程中的一个回调方法，用于提供一个扩展点，让开发人员可以在容器刷新完成后执行一些自定义的逻辑
+        // 可以在onRefresh方法中执行一些额外的初始化操作、启动定时任务、注册额外的bean等
+        // Initialize other special beans in specific context subclasses.
+        onRefresh();
+
+        // 10.向应用程序上下文注册事件监听器
+        // Check for listener beans and register them.
+        registerListeners();
+
+        // 11.在Bean工厂初始化的最后阶段，完成所有注册的Bean的初始化过程
+        // Bean工厂中所有已注册的Bean的名称 -->
+        // 遍历所有的Bean名称获取对应的Bean定义 -->
+        // 根据Bean定义的信息，进行实例化、依赖注入、初始化等操作 -->
+        // 若Bean定义中有初始化方法（例如通过@PostConstruct注解标记的方法），则调用该方法进行额外的初始化逻辑
+        // 若Bean定义中有销毁方法（例如通过@PreDestroy注解标记的方法），则在容器关闭时调用该方法进行资源释放等操作
+        // Instantiate all remaining (non-lazy-init) singletons.
+        finishBeanFactoryInitialization(beanFactory);
+
+        // 12.容器刷新的最后阶段，执行一些额外的逻辑以完成刷新过程
+        // 清理初始化过程中一系列操作使用到的资源缓存
+        // 初始化LifecycleProcessor
+        // 启动所有实现了Lifecycle接口的bean
+        // 发布ContextRefreshedEvent事件
+        // Last step: publish corresponding event.
+        finishRefresh();
+        }
+
+        catch(BeansException ex){
+        if(logger.isWarnEnabled()){
+        logger.warn("Exception encountered during context initialization - "+
+        "cancelling refresh attempt: "+ex);
+        }
+
+        // Destroy already created singletons to avoid dangling resources.
+        destroyBeans();
+
+        // Reset 'active' flag.
+        cancelRefresh(ex);
+
+        // Propagate exception to caller.
+        throw ex;
+        }
+
+        finally{
+        // Reset common introspection caches in Spring's core, since we
+        // might not ever need metadata for singleton beans anymore...
+        resetCommonCaches();
+        contextRefresh.end();
+        }
+        }
+        }
+```
+
+### 切换服务器
+
+```xml
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-web</artifactId>
+  <exclusions>
+    <!-- Exclude the Tomcat dependency -->
+    <exclusion>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-tomcat</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+        <!-- Use Jetty instead -->
+<dependency>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-jetty</artifactId>
+</dependency>
+```
 
 
 
