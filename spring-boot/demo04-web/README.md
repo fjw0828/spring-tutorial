@@ -201,7 +201,7 @@ public static class WebMvcAutoConfigurationAdapter implements WebMvcConfigurer, 
 `WebMvcAutoConfigurationAdapter`实现了`WebMvcConfigurer`接口,可以重写一些有关Web MVC的配置方法,比如添加拦截器、配置视图解析器、配置静态资源等.
 通过重写这些方法,可以根据自己的需要定制化Web MVC的行为.可定制功能有:
 
-![WebMvcConfigurer](https://s2.loli.net/2023/06/22/dijPSRce7JlBIt3.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f85725fe98.webp" alt="WebMvcConfigurer"/>
 
 - addArgumentResolvers:添加参数解析器
 - addCorsMappings:添加跨域映射
@@ -321,11 +321,11 @@ spring:
 
 第一次请求:
 
-![第一次请求](https://s2.loli.net/2023/06/23/LX86W9SCGMmNPEl.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f850bd24ec.webp" alt="第一次请求"/>
 
 第二次请求:
 
-![第二次请求](https://s2.loli.net/2023/06/23/M9q5A2UQWSv7l3E.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f85350e56a.webp" alt="第二次请求"/>
 
 ### 5.自定义静态资源
 
@@ -474,7 +474,7 @@ public class AntPathController {
 
 访问:http://localhost:8080/ads/bd/adf
 
-![AntPathMatcher策略](https://s2.loli.net/2023/06/23/4BUG8Jv7jnVcfR2.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f847e483f9.webp" alt="AntPathMatcher策略"/>
 
 控制台打印:
 > 路径变量p1： adf
@@ -571,7 +571,7 @@ public enum MatchingStrategy {
 它可能使用 406（Not Acceptable）、415（Unsupported Media Type）进行响应并为其支持的媒体类型设置标头.
 例如，分别对 POST 和 PATCH 请求使用 Accept-Post (en-US) 或 Accept-Patch 标头
 
-<img src="https://s2.loli.net/2023/06/24/Mxv32C8Ag6DQKS7.webp" alt="服务端驱动型内容协商"/>
+<img src="https://image.fu-jw.com/img/2023/07/01/649f8446e65eb.webp" alt="服务端驱动型内容协商"/>
 
 HTTP/1.1 规范指定了一系列的标准标头用于启动服务端驱动型内容协商（Accept、Accept-Charset、Accept-Encoding、Accept-Language）
 
@@ -612,7 +612,7 @@ SpringBoot有两种方式:基于请求头和基于请求参数的实现
   - 根据参数协商,优先返回**json**类型数据,(需要开启参数匹配设置)
   - 发送请求 GET /person?format=xml,优先返回**xml**类型数据
 
-![SpringBoot内容协商](https://s2.loli.net/2023/06/24/UljfBkXywHdnAxr.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f841eacfa9.webp"/>
 
 ### 4.测试
 
@@ -627,8 +627,8 @@ SpringBoot有两种方式:基于请求头和基于请求参数的实现
 </details>
 
 效果:
-![发请求](https://s2.loli.net/2023/06/24/2srgE9f1NoOjAwH.webp)
-![请求结果](https://s2.loli.net/2023/06/24/G59OC74LfhFrb3H.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f83f97a750.webp"/>
+<img src="https://image.fu-jw.com/img/2023/07/01/649f83db815e5.webp"/>
 
 修改为XML格式:
 
@@ -657,7 +657,7 @@ public class Person {
 
 效果:
 
-![内容协商-xml](https://s2.loli.net/2023/06/24/vG4JUTPusNzAWfl.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f83a2b0c4e.webp"/>
 
 参数演示:
 
@@ -687,13 +687,13 @@ spring.mvc.contentnegotiation.favor-parameter=true
 spring.mvc.contentnegotiation.parameter-name=type
 ```
 
-![](https://s2.loli.net/2023/06/24/1V7okFrjKUIRPY8.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f8378aac51.webp"/>
 
-![](https://s2.loli.net/2023/06/24/QlobhemNGY6rCgd.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f835b383d5.webp"/>
 
-![](https://s2.loli.net/2023/06/24/GcSY74PgelosNt3.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f8333bc364.webp"/>
 
-![](https://s2.loli.net/2023/06/24/bjuMB2hftdnPcaI.webp)
+<img src="https://image.fu-jw.com/img/2023/07/01/649f83010fe7d.webp"/>
 
 ### 5.内容协商原理浅析
 
@@ -722,7 +722,7 @@ spring.mvc.contentnegotiation.parameter-name=type
 - `HttpMessageConverter`会先进行内容协商
   - 遍历所有的`MessageConverter`看谁支持这种内容类型的数据
   - 默认`MessageConverter`有以下:
-  - ![](https://s2.loli.net/2023/06/25/bGrtcC3mV4du52F.webp)
+  - <img src="https://image.fu-jw.com/img/2023/07/01/649f825276881.webp"/>
   - 最终因为要`json`所以`MappingJackson2HttpMessageConverter`支持写出json
   - jackson用`ObjectMapper`把对象写出去
 
@@ -777,7 +777,9 @@ SpringBoot自动配置支持的模板引擎有:
 
 ### 1.默认机制
 
-SpringBoot在web场景下,自动装配了错误处理`ErrorMvcAutoConfiguration`
+SpringBoot在**web场景**下,当应用程序发生错误或异常时,SpringBoot会自动应用`ErrorMvcAutoConfiguration`进行配置.
+
+<img src="https://image.fu-jw.com/img/2023/07/01/649f81ec7ae0a.webp"/>
 
 ```java
 // Load before the main WebMvcAutoConfiguration so that the error View is available
@@ -793,6 +795,104 @@ public class ErrorMvcAutoConfiguration {
   //...
 }
 ```
+
+两大处理机制:
+机制一: **SpringBoot**会自适应处理错误,响应页面或**JSON**数据(内容协商)
+
+<img alt="同一请求-浏览器返回白页" src="https://image.fu-jw.com/img/2023/07/01/649ff3f00a98a.webp"/>
+<img alt="同一请求-客户端返回JSON" src="https://image.fu-jw.com/img/2023/07/01/649ff431580c1.webp"/>
+<img alt="同一请求-客户端也可设置返回XML" src="https://image.fu-jw.com/img/2023/07/01/649ff45dc52e3.webp"/>
+
+机制二: **SpringMVC**的错误处理机制依然保留,MVC处理不了,才会交给boot进行处理
+
+<img alt="SpringBoot错误处理机制" src="https://image.fu-jw.com/img/2023/07/03/64a22e201bcbb.webp"/>
+
+### SpringMVC处理错误
+
+```java
+
+@Controller
+public class ErrorController {
+
+  /**
+   * 测试MVC的错误处理机制
+   * 默认情况下--不处理错误:
+   * 浏览器返回白页,因为请求头中: Accept:text/html
+   * 移动端postman返回JSON.因为请求头中: (Accept:* 所有类型,优先JSON)
+   * 自己处理错误: handleException()
+   */
+  @GetMapping("testError")
+  public String testError() {
+
+    // 错误出现
+    int i = 12 / 0;
+
+    return "testError";
+  }
+
+  /**
+   * 自定义处理所有错误
+   * @ExceptionHandler 可以标识一个方法, 默认只能处理这个类发生的指定错误
+   * @ControllerAdvice AOP思想, 可以统一处理所有方法, 如 GlobalExceptionHandler.java
+   */
+  @ResponseBody
+  @ExceptionHandler(Exception.class)
+  public String handleException(Exception e) {
+
+    return "错误已发生,原因:" + e.getMessage();
+  }
+}
+```
+
+<img src="https://image.fu-jw.com/img/2023/07/03/64a232aac8fa8.png"/>
+
+统一错误处理:
+
+```java
+
+@ControllerAdvice // 统一处理所有Controller
+public class GlobalExceptionHandler {
+
+  /**
+   * 自定义处理所有错误
+   * @ExceptionHandler 可以标识一个方法, 默认只能处理这个类发生的指定错误
+   * @ControllerAdvice AOP思想, 可以统一处理所有方法
+   */
+  @ResponseBody
+  @ExceptionHandler(Exception.class)
+  public String handleException(Exception e) {
+
+    return "统一处理,错误已发生,原因:" + e.getMessage();
+  }
+}
+```
+
+<img src="https://image.fu-jw.com/img/2023/07/03/64a232c9bbac2.png"/>
+
+### SpringBoot处理错误
+
+自动配置类`ErrorMvcAutoConfiguration`, 主要包含以下功能:
+
+#### 注册组件: BasicErrorController
+
+这是一个默认的错误处理控制器,用于处理一般的错误请求.
+它会根据请求的`Accept`头部信息返回对应的错误响应,比如**JSON**,**XML**或**HTML**格式.
+
+```java
+
+@Controller
+// 可以处理配置文件中:server.error.path 的映射
+// 或者处理配置文件中:error.path 的映射
+// 以上都没配置,就会将请求映射到: /error
+@RequestMapping("${server.error.path:${error.path:/error}}")
+public class BasicErrorController extends AbstractErrorController {
+  //...
+}
+```
+
+
+
+
 
 
 
