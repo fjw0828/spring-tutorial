@@ -1,0 +1,4 @@
+spring:
+  main:
+    log-startup-info: true # 启动日志开关, 默认true
+#    banner-mode: off # 关闭banner
