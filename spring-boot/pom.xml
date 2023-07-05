@@ -21,6 +21,7 @@
         <module>demo02-anno</module>
         <module>demo03-log</module>
         <module>demo04-web</module>
+        <module>demo05-features</module>
     </modules>
 
     <dependencyManagement>

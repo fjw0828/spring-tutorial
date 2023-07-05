@@ -97,7 +97,7 @@ SpringBoot 的自动装配功能在`web场景`中添加了如下特性:
 
 接下来分别展开分析.
 
-## 1.静态资源
+## 1.自动配置原理浅析
 
 由前面知道引入`web场景`会加载自动配置类:`WebMvcAutoConfiguration`
 
