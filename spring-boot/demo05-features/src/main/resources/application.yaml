@@ -1,4 +1,6 @@
 spring:
   main:
     log-startup-info: true # 启动日志开关, 默认true
+#  profiles:
+#    active: test # 激活的环境名称列表，多个名称可以代表多个环境。
 #    banner-mode: off # 关闭banner
