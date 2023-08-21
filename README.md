@@ -13,3 +13,4 @@ spring-tutorial
     │
     └─demo04-web:
 ```
+自动更新测试
